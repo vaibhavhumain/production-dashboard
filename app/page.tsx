@@ -1,65 +1,149 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { Bar } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  Tooltip,
+  Legend,
+} from "chart.js";
+
+import ChartDataLabels from "chartjs-plugin-datalabels";
+
+ChartJS.register(
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  Tooltip,
+  Legend,
+  ChartDataLabels
+);
+
+interface BusSheetRow {
+  ["Chassi Name"]: string;
+  ["TOTAL BUS WORK"]?: string;
+  [key: string]: any;
+}
+
+export default function Dashboard() {
+  const [rawData, setRawData] = useState<BusSheetRow[]>([]);
+  const [view, setView] = useState<"Normal" | "Ascending" | "Descending">(
+    "Normal"
+  );
+
+  const API_URL =
+    "https://opensheet.elk.sh/1PiArZhuPYdslTQzdxMLvrFGh-Jsa5LLVs2P8_Kc9--I/Sheet1";
+
+  // 🔥 Load saved select option on refresh
+  useEffect(() => {
+    const savedView = localStorage.getItem("gc_view");
+    if (savedView) {
+      setView(savedView as "Normal" | "Ascending" | "Descending");
+    }
+  }, []);
+
+  // 🔥 Save whenever user changes select
+  useEffect(() => {
+    localStorage.setItem("gc_view", view);
+  }, [view]);
+
+  useEffect(() => {
+    loadData();
+    const interval = setInterval(loadData, 20000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const loadData = async () => {
+    try {
+      const res = await axios.get<BusSheetRow[]>(API_URL);
+      setRawData(res.data);
+    } catch (err) {
+      console.error("Error loading sheet", err);
+    }
+  };
+
+  const getNumber = (value?: string) => {
+    if (!value) return 0;
+    return parseFloat(String(value).replace("%", ""));
+  };
+
+  const sortedData = [...rawData].sort((a, b) => {
+    const A = getNumber(a["TOTAL BUS WORK"]);
+    const B = getNumber(b["TOTAL BUS WORK"]);
+    if (view === "Ascending") return A - B;
+    if (view === "Descending") return B - A;
+    return 0;
+  });
+
+  const chartData = {
+    labels: sortedData.map((d) => d["Chassi Name"]),
+    datasets: [
+      {
+        label: "Total Work Done (%)",
+        data: sortedData.map((d) => getNumber(d["TOTAL BUS WORK"])),
+        backgroundColor: "#3b82f6",
+        borderColor: "#1d4ed8",
+        borderWidth: 1,
+      },
+    ],
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className="max-w mx-auto px-6 py-10">
+      <div className="card shadow-xl p-8">
+        <h1 className="text-3xl font-bold tracking-tight mb-6">
+          Gobind Coach Production Dashboard
+        </h1>
+
+        <div className="mb-6">
+          <label className="mr-4 font-semibold text-lg">Select View:</label>
+
+          <select
+            value={view}
+            onChange={(e) =>
+              setView(e.target.value as "Normal" | "Ascending" | "Descending")
+            }
+            className="px-4 py-2 border rounded-lg bg-white text-black shadow-sm"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            <option value="Normal">Normal Order</option>
+            <option value="Ascending">Ascending (Low → High)</option>
+            <option value="Descending">Descending (High → Low)</option>
+          </select>
         </div>
-      </main>
+
+        <div className="w-full h-[500px] bg-white rounded-xl p-4 shadow-md">
+          <Bar
+            data={chartData}
+            options={{
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false },
+                datalabels: {
+                  anchor: "end",
+                  align: "top",
+                  color: "#000",
+                  font: {
+                    weight: "bold",
+                    size: 12,
+                  },
+                  formatter: (value: number) => value + "%",
+                },
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  max: 100,
+                },
+              },
+            }}
+          />
+        </div>
+      </div>
     </div>
   );
 }
