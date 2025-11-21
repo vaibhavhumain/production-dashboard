@@ -36,9 +36,8 @@ export default function Dashboard() {
   );
 
   const API_URL =
-    "https://opensheet.elk.sh/1PiArZhuPYdslTQzdxMLvrFGh-Jsa5LLVs2P8_Kc9--I/Sheet1";
+    "https://opensheet.elk.sh/12OPcqR0PDlVTtWFWcUsY21YXEzy20dJw/OVERALL";
 
-  // 🔥 Load saved select option on refresh
   useEffect(() => {
     const savedView = localStorage.getItem("gc_view");
     if (savedView) {
@@ -46,7 +45,6 @@ export default function Dashboard() {
     }
   }, []);
 
-  // 🔥 Save whenever user changes select
   useEffect(() => {
     localStorage.setItem("gc_view", view);
   }, [view]);
