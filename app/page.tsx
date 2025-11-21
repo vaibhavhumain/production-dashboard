@@ -36,7 +36,7 @@ export default function Dashboard() {
   );
 
   const API_URL =
-    "https://opensheet.elk.sh/12OPcqR0PDlVTtWFWcUsY21YXEzy20dJw/OVERALL";
+    "https://opensheet.elk.sh/1PiArZhuPYdslTQzdxMLvrFGh-Jsa5LLVs2P8_Kc9--I/Sheet1";
 
   useEffect(() => {
     const savedView = localStorage.getItem("gc_view");
