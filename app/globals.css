@@ -113,7 +113,7 @@ select {
   backdrop-filter: blur(10px);
   transition: all 0.2s ease;
 }
-
+  
 select:hover {
   border-color: var(--accent);
 }
