@@ -92,6 +92,9 @@ export default function Dashboard() {
 
   return (
     <div className="max-w mx-auto px-6 py-10">
+      <div className="flex flex-col md:flex-row justify-between items-center mb-8">
+        <button onClick={ () => {window.location.href="/login"}} className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white font-semibold shadow">Logout</button>
+      </div>
       <div className="card shadow-xl p-8">
         <h1 className="text-3xl font-bold tracking-tight mb-6">
           Gobind Coach Production Dashboard

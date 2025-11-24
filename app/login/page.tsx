@@ -8,22 +8,30 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   async function handleLogin(e: any) {
     e.preventDefault();
+    setError("");
 
-    const res = await fetch("https://production-backend-mx0s.onrender.com/api/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ email, password }),
-      headers: { "Content-Type": "application/json" },
-    });
+    const res = await fetch(
+      "https://production-backend-mx0s.onrender.com/api/auth/login",
+      {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+        headers: { "Content-Type": "application/json" },
+      }
+    );
 
     const data = await res.json();
 
-    if (res.ok) {
-      localStorage.setItem("token", data.token);
-      router.push("/dashboard");
+    if (!res.ok) {
+      setError(data.error || "Login failed");
+      return;
     }
+
+    // No token needed — only one admin access  
+    router.push("/dashboard");
   }
 
   return (
@@ -33,6 +41,11 @@ export default function LoginPage() {
         <h1 className="text-3xl font-bold text-center text-white mb-6">
           Login
         </h1>
+
+        {/* Error Message */}
+        {error && (
+          <p className="text-red-400 text-center mb-4">{error}</p>
+        )}
 
         <form onSubmit={handleLogin} className="space-y-4">
           <input
@@ -56,12 +69,6 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="text-center text-gray-300 mt-4">
-          Don’t have an account?{" "}
-          <a href="/signup" className="text-blue-400 hover:underline">
-            Create Account
-          </a>
-        </p>
       </div>
     </div>
   );
