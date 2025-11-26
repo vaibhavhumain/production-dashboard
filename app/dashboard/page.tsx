@@ -10,17 +10,11 @@ import {
   LinearScale,
   Tooltip,
   Legend,
+  Plugin,
 } from "chart.js";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 
-ChartJS.register(
-  BarElement,
-  CategoryScale,
-  LinearScale,
-  Tooltip,
-  Legend,
-  ChartDataLabels
-);
+ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend, ChartDataLabels);
 
 interface BusSheetRow {
   ["Chassi Name"]: string;
@@ -40,9 +34,7 @@ export default function Dashboard() {
   const [page, setPage] = useState(0);
   const pageSize = 20;
 
-  const [view, setView] = useState<"Normal" | "Ascending" | "Descending">(
-    "Normal"
-  );
+  const [view, setView] = useState<"Normal" | "Ascending" | "Descending">("Normal");
 
   // Format today EXACTLY like Sheet → 26-11-2025
   const getToday = () => {
@@ -59,7 +51,6 @@ export default function Dashboard() {
   // MANPOWER DAILY SUMMARY SHEET
   const SUMMARY_URL =
     "https://opensheet.elk.sh/1PiArZhuPYdslTQzdxMLvrFGh-Jsa5LLVs2P8_Kc9--I/Sheet1";
-
 
   // Load saved view on first render
   useEffect(() => {
@@ -161,115 +152,159 @@ export default function Dashboard() {
         label: "Total Work Done (%)",
         data: visibleData.map((d) => getNumber(d["TOTAL BUS WORK"])),
         backgroundColor: visibleData.map((d) =>
-          getWorkStatus(d) === "yes"
-            ? "rgba(34,197,94,0.8)" // green
-            : "rgba(239,68,68,0.8)" // red
+          getWorkStatus(d) === "yes" ? "rgba(34,197,94,0.8)" : "rgba(239,68,68,0.8)"
         ),
         borderColor: visibleData.map((d) =>
-          getWorkStatus(d) === "yes"
-            ? "rgba(21,128,61,1)"
-            : "rgba(185,28,28,1)"
+          getWorkStatus(d) === "yes" ? "rgba(21,128,61,1)" : "rgba(185,28,28,1)"
         ),
         borderWidth: 1,
       },
     ],
   };
 
-return (
-  <div className="max-w mx-auto px-6 py-10">
-    {/* HEADER ROW: Logout, Total Buses, Manpower Summary */}
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+const StageBackgroundPlugin: Plugin<"bar"> = {
+  id: "stageBackground",
+  beforeDraw: (chart) => {
+    const { ctx, chartArea, scales } = chart;
+    if (!chartArea) return;
+    const yScale = scales.y;
+
+    const stages = [
+      { min: 0, max: 25, color: "rgba(255, 230, 200, 0.2)", label: "STR" },
+      { min: 25, max: 50, color: "rgba(200, 230, 255, 0.2)", label: "PNL" },
+      { min: 50, max: 75, color: "rgba(200, 255, 200, 0.2)", label: "PNT" },
+      { min: 75, max: 100, color: "rgba(255, 200, 200, 0.2)", label: "ASM" },
+    ];
+
+    stages.forEach((stage) => {
+      const yTop = yScale.getPixelForValue(stage.max);
+      const yBottom = yScale.getPixelForValue(stage.min);
+
+      // Draw colored background
+      ctx.fillStyle = stage.color;
+      ctx.fillRect(chartArea.left, yTop, chartArea.right - chartArea.left, yBottom - yTop);
+
+      // Draw stage label near Y-axis (left)
+      ctx.save();
+      ctx.fillStyle = "#000";
+      ctx.font = "bold 12px Arial";
+      ctx.textAlign = "right"; // align text to right so it hugs the Y-axis
+      ctx.textBaseline = "middle";
+
+      const yMiddle = (yTop + yBottom) / 2;
+      ctx.fillText(stage.label, chartArea.left - 5, yMiddle); // -5 to add a small gap from axis
+      ctx.restore();
+    });
+  },
+};
+
+  return (
+    <div className="max-w mx-auto px-6 py-10">
       {/* Logout Button */}
-      <button
-        onClick={() => {
-          window.location.href = "/login";
-        }}
-        className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white font-semibold shadow"
-      >
-        Logout
-      </button>
-
-      {/* Total Buses in Production */}
-      <div className="px-5 py-2 bg-blue-600 text-white rounded-xl shadow font-semibold text-lg">
-        Total Buses in Production: {sortedData.length}
-      </div>
-
-      {/* Manpower Summary Card */}
-      <div className="px-5 py-3 bg-black text-white rounded-xl shadow font-semibold text-md">
-        <div>Date: {summary.date}</div>
-        <div>Manpower Present: {summary.manpower}</div>
-        <div>Drivers Present: {summary.drivers}</div>
-        <div>Supervisors Present: {summary.supervisors}</div>
-      </div>
-    </div>
-
-    {/* DASHBOARD CARD */}
-    <div className="card shadow-xl p-8">
-      <h1 className="text-3xl font-bold tracking-tight mb-6">
-        Gobind Coach Production Dashboard
-      </h1>
-
-      {/* View Selector */}
-      <div className="mb-6">
-        <label className="mr-4 font-semibold text-lg">Select View:</label>
-        <select
-          value={view}
-          onChange={(e) => setView(e.target.value as any)}
-          className="px-4 py-2 border rounded-lg bg-white text-black shadow-sm"
-        >
-          <option value="Normal">Normal Order</option>
-          <option value="Ascending">Ascending (Low → High)</option>
-          <option value="Descending">Descending (High → Low)</option>
-        </select>
-      </div>
-
-      {/* Chart */}
-      <div className="w-full h-[500px] bg-white rounded-xl p-4 shadow-md">
-        <Bar
-          data={chartData}
-          options={{
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { display: false },
-              datalabels: {
-                anchor: "end",
-                align: "top",
-                color: "#000",
-                font: { weight: "bold", size: 12 },
-                formatter: (value: number) => value + "%",
-              },
-            },
-            scales: {
-              y: { beginAtZero: true, max: 100 },
-            },
+      <div className="flex justify-end mb-6">
+        <button
+          onClick={() => {
+            window.location.href = "/login";
           }}
-        />
+          className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white font-semibold shadow"
+        >
+          Logout
+        </button>
       </div>
 
-      {/* Pagination */}
-      <div className="flex justify-center mt-6 gap-4">
-        <button
-          disabled={page === 0}
-          onClick={() => setPage(page - 1)}
-          className={`px-4 py-2 rounded-lg text-white font-semibold 
-            ${page === 0 ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"}`}
-        >
-          Previous
-        </button>
+      {/* DASHBOARD CARD */}
+      <div className="card shadow-xl p-8">
+        <h1 className="text-3xl font-bold tracking-tight mb-6">
+          Gobind Coach Production Dashboard
+        </h1>
 
-        <button
-          disabled={(page + 1) * pageSize >= sortedData.length}
-          onClick={() => setPage(page + 1)}
-          className={`px-4 py-2 rounded-lg text-white font-semibold 
-            ${(page + 1) * pageSize >= sortedData.length
-              ? "bg-gray-400"
-              : "bg-green-600 hover:bg-green-700"}`}
-        >
-          Next
-        </button>
+        {/* Top Row: Select View + Totals / Manpower */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+          {/* Select View */}
+          <div className="flex items-center gap-4">
+            <label className="font-semibold text-lg">Select View:</label>
+            <select
+              value={view}
+              onChange={(e) => setView(e.target.value as any)}
+              className="px-4 py-2 border rounded-lg bg-white text-black shadow-sm"
+            >
+              <option value="Normal">Normal Order</option>
+              <option value="Ascending">Ascending (Low → High)</option>
+              <option value="Descending">Descending (High → Low)</option>
+            </select>
+          </div>
+
+          {/* Totals + Manpower Summary */}
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+            {/* Total Buses */}
+            <div className="px-5 py-2 bg-blue-600 text-white rounded-xl shadow font-semibold text-lg">
+              Total Buses in Production: {sortedData.length}
+            </div>
+
+            {/* Manpower Summary */}
+            <div className="px-5 py-3 bg-black text-white rounded-xl shadow font-semibold text-md">
+              <div>Date: {summary.date}</div>
+              <div>Manpower Present: {summary.manpower}</div>
+              <div>Drivers Present: {summary.drivers}</div>
+              <div>Supervisors Present: {summary.supervisors}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Chart */}
+        <div className="w-full h-[500px] bg-white rounded-xl p-4 shadow-md">
+          <Bar
+            data={chartData}
+            options={{
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false },
+                datalabels: {
+                  anchor: "end",
+                  align: "top",
+                  color: "#000",
+                  font: { weight: "bold", size: 12 },
+                  formatter: (value: number) => value + "%",
+                },
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  max: 100,
+                  ticks: {
+                    stepSize: 25,
+                  },
+                },
+              },
+            }}
+            plugins={[StageBackgroundPlugin]}
+          />
+        </div>
+
+        {/* Pagination */}
+        <div className="flex justify-center mt-6 gap-4">
+          <button
+            disabled={page === 0}
+            onClick={() => setPage(page - 1)}
+            className={`px-4 py-2 rounded-lg text-white font-semibold 
+              ${page === 0 ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"}`}
+          >
+            Previous
+          </button>
+
+          <button
+            disabled={(page + 1) * pageSize >= sortedData.length}
+            onClick={() => setPage(page + 1)}
+            className={`px-4 py-2 rounded-lg text-white font-semibold 
+              ${(page + 1) * pageSize >= sortedData.length
+                ? "bg-gray-400"
+                : "bg-green-600 hover:bg-green-700"}`}
+          >
+            Next
+          </button>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
 }
