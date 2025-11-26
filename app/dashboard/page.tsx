@@ -77,18 +77,45 @@ export default function Dashboard() {
     return 0;
   });
 
+  const getWorkStatus = (row: any) => {
+  // find any column that contains yes/no
+  const yesNoKey = Object.keys(row).find(
+    (k) =>
+      typeof row[k] === "string" &&
+      ["yes", "no"].includes(row[k].trim().toLowerCase())
+  );
+
+  if (!yesNoKey) return "no"; // default red
+
+  return row[yesNoKey].trim().toLowerCase();
+};
+
+
   const chartData = {
-    labels: sortedData.map((d) => d["Chassi Name"]),
-    datasets: [
-      {
-        label: "Total Work Done (%)",
-        data: sortedData.map((d) => getNumber(d["TOTAL BUS WORK"])),
-        backgroundColor: "#3b82f6",
-        borderColor: "#1d4ed8",
-        borderWidth: 1,
-      },
-    ],
-  };
+  labels: sortedData.map((d) => d["Chassi Name"]),
+  datasets: [
+    {
+      label: "Total Work Done (%)",
+      data: sortedData.map((d) => getNumber(d["TOTAL BUS WORK"])),
+
+      backgroundColor: sortedData.map((d) =>
+        getWorkStatus(d) === "yes"
+          ? "rgba(34,197,94,0.8)" // green
+          : "rgba(239,68,68,0.8)" // red
+      ),
+
+      borderColor: sortedData.map((d) =>
+        getWorkStatus(d) === "yes"
+          ? "rgba(21,128,61,1)" // dark green
+          : "rgba(185,28,28,1)" // dark red
+      ),
+
+      borderWidth: 1,
+    },
+  ],
+};
+
+
 
   return (
     <div className="max-w mx-auto px-6 py-10">
