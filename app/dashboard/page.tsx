@@ -235,20 +235,34 @@ const StageBackgroundPlugin: Plugin<"bar"> = {
           </div>
 
           {/* Totals + Manpower Summary */}
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-            {/* Total Buses */}
-            <div className="px-5 py-2 bg-blue-600 text-white rounded-xl shadow font-semibold text-lg">
-              Total Buses in Production: {sortedData.length}
-            </div>
+<div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+  {/* Total Buses */}
+  <div className="flex flex-col gap-2">
+    <div className="px-5 py-2 bg-blue-600 text-white rounded-xl shadow font-semibold text-lg">
+      Total Buses in Production: {sortedData.length}
+    </div>
 
-            {/* Manpower Summary */}
-            <div className="px-5 py-3 bg-black text-white rounded-xl shadow font-semibold text-md">
-              <div>Date: {summary.date}</div>
-              <div>Manpower Present: {summary.manpower}</div>
-              <div>Drivers Present: {summary.drivers}</div>
-              <div>Supervisors Present: {summary.supervisors}</div>
-            </div>
-          </div>
+    {/* Interactive Legend */}
+    <div className="px-5 py-2 rounded-xl shadow font-semibold text-sm flex flex-col md:flex-row gap-2 select-none">
+      <div className="flex items-center gap-2">
+        <span className="w-4 h-4 bg-red-600 rounded-sm"></span>
+        Red = Inactive
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="w-4 h-4 bg-green-600 rounded-sm"></span>
+        Green = Active
+      </div>
+    </div>
+  </div>
+
+  {/* Manpower Summary */}
+  <div className="px-5 py-3 bg-black text-white rounded-xl shadow font-semibold text-md">
+    <div>Date: {summary.date}</div>
+    <div>Manpower Present: {summary.manpower}</div>
+    <div>Drivers Present: {summary.drivers}</div>
+    <div>Supervisors Present: {summary.supervisors}</div>
+  </div>
+</div>
         </div>
 
         {/* Chart */}
