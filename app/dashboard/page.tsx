@@ -36,7 +36,6 @@ export default function Dashboard() {
 
   const [view, setView] = useState<"Normal" | "Ascending" | "Descending">("Normal");
 
-  // Format today EXACTLY like Sheet → 26-11-2025
   const getToday = () => {
     const d = new Date();
     return `${String(d.getDate()).padStart(2, "0")}-${String(
@@ -44,26 +43,21 @@ export default function Dashboard() {
     ).padStart(2, "0")}-${d.getFullYear()}`;
   };
 
-  // BUS DATA SHEET
   const API_URL =
     "https://opensheet.elk.sh/1PiArZhuPYdslTQzdxMLvrFGh-Jsa5LLVs2P8_Kc9--I/Sheet1";
 
-  // MANPOWER DAILY SUMMARY SHEET
   const SUMMARY_URL =
     "https://opensheet.elk.sh/1PiArZhuPYdslTQzdxMLvrFGh-Jsa5LLVs2P8_Kc9--I/Sheet1";
 
-  // Load saved view on first render
   useEffect(() => {
     const saved = localStorage.getItem("gc_view");
     if (saved) setView(saved as any);
   }, []);
 
-  // Save view preference
   useEffect(() => {
     localStorage.setItem("gc_view", view);
   }, [view]);
 
-  // Load both sheets every 20 seconds
   useEffect(() => {
     loadData();
     loadSummary();
@@ -76,7 +70,6 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  // LOAD BUS DATA
   const loadData = async () => {
     try {
       const res = await axios.get<BusSheetRow[]>(API_URL);
@@ -86,7 +79,6 @@ export default function Dashboard() {
     }
   };
 
-  // LOAD MANPOWER SUMMARY
   const loadSummary = async () => {
     try {
       const res = await axios.get<any[]>(SUMMARY_URL);
@@ -114,17 +106,13 @@ export default function Dashboard() {
     }
   };
 
-  // CLEAN NUMBER
   const getNumber = (value?: string) => {
     if (!value) return 0;
     return parseFloat(String(value).replace("%", ""));
   };
 
-  // SORT LOGIC
-  // SORT LOGIC
 const sortedData = [...rawData].sort((a, b) => {
   if (view === "Normal") {
-    // Sort by S.NO numerically
     const A = parseInt(a["S.NO"] || "0", 10);
     const B = parseInt(b["S.NO"] || "0", 10);
     return A - B;
@@ -138,7 +126,6 @@ const sortedData = [...rawData].sort((a, b) => {
   return 0;
 });
 
-  // WORK STATUS COLOR
   const getWorkStatus = (row: any) => {
     const key = Object.keys(row).find(
       (k) =>
@@ -149,10 +136,8 @@ const sortedData = [...rawData].sort((a, b) => {
     return row[key].trim().toLowerCase();
   };
 
-  // Pagination Slice
   const visibleData = sortedData.slice(page * pageSize, (page + 1) * pageSize);
 
-  // CHART DATA
   const chartData = {
     labels: visibleData.map((d) => d["Chassi Name"]),
     datasets: [
@@ -169,6 +154,11 @@ const sortedData = [...rawData].sort((a, b) => {
       },
     ],
   };
+
+  // Count Active and Inactive buses
+const activeCount = sortedData.filter((row) => getWorkStatus(row) === "yes").length;
+const inactiveCount = sortedData.filter((row) => getWorkStatus(row) === "no").length;
+
 
 const StageBackgroundPlugin: Plugin<"bar"> = {
   id: "stageBackground",
@@ -188,19 +178,17 @@ const StageBackgroundPlugin: Plugin<"bar"> = {
       const yTop = yScale.getPixelForValue(stage.max);
       const yBottom = yScale.getPixelForValue(stage.min);
 
-      // Draw colored background
       ctx.fillStyle = stage.color;
       ctx.fillRect(chartArea.left, yTop, chartArea.right - chartArea.left, yBottom - yTop);
 
-      // Draw stage label near Y-axis (left)
       ctx.save();
       ctx.fillStyle = "#000";
       ctx.font = "bold 12px Arial";
-      ctx.textAlign = "right"; // align text to right so it hugs the Y-axis
+      ctx.textAlign = "right";
       ctx.textBaseline = "middle";
 
       const yMiddle = (yTop + yBottom) / 2;
-      ctx.fillText(stage.label, chartArea.left - 5, yMiddle); // -5 to add a small gap from axis
+      ctx.fillText(stage.label, chartArea.left - 5, yMiddle);
       ctx.restore();
     });
   },
@@ -251,16 +239,25 @@ const StageBackgroundPlugin: Plugin<"bar"> = {
     </div>
 
     {/* Interactive Legend */}
-    <div className="px-5 py-2 rounded-xl shadow font-semibold text-sm flex flex-col md:flex-row gap-2 select-none">
-      <div className="flex items-center gap-2">
-        <span className="w-4 h-4 bg-red-600 rounded-sm"></span>
-        Red = Inactive
-      </div>
-      <div className="flex items-center gap-2">
-        <span className="w-4 h-4 bg-green-600 rounded-sm"></span>
-        Green = Active
-      </div>
+    {/* Interactive Legend */}
+<div className="px-5 py-2 rounded-xl shadow font-semibold text-sm flex flex-col md:flex-row gap-6 select-none">
+  <div className="flex flex-col items-start gap-1">
+    <div className="flex items-center gap-2">
+      <span className="w-4 h-4 bg-red-600 rounded-sm"></span>
+      Red = Inactive
     </div>
+    <div>Count: {inactiveCount}</div>
+  </div>
+
+  <div className="flex flex-col items-start gap-1">
+    <div className="flex items-center gap-2">
+      <span className="w-4 h-4 bg-green-600 rounded-sm"></span>
+      Green = Active
+    </div>
+    <div>Count: {activeCount}</div>
+  </div>
+</div>
+
   </div>
 
   {/* Manpower Summary */}
