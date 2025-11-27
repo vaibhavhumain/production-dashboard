@@ -121,14 +121,22 @@ export default function Dashboard() {
   };
 
   // SORT LOGIC
-  const sortedData = [...rawData].sort((a, b) => {
-    const A = getNumber(a["TOTAL BUS WORK"]);
-    const B = getNumber(b["TOTAL BUS WORK"]);
+  // SORT LOGIC
+const sortedData = [...rawData].sort((a, b) => {
+  if (view === "Normal") {
+    // Sort by S.NO numerically
+    const A = parseInt(a["S.NO"] || "0", 10);
+    const B = parseInt(b["S.NO"] || "0", 10);
+    return A - B;
+  }
 
-    if (view === "Ascending") return A - B;
-    if (view === "Descending") return B - A;
-    return 0;
-  });
+  const A = getNumber(a["TOTAL BUS WORK"]);
+  const B = getNumber(b["TOTAL BUS WORK"]);
+
+  if (view === "Ascending") return A - B;
+  if (view === "Descending") return B - A;
+  return 0;
+});
 
   // WORK STATUS COLOR
   const getWorkStatus = (row: any) => {
@@ -268,32 +276,50 @@ const StageBackgroundPlugin: Plugin<"bar"> = {
         {/* Chart */}
         <div className="w-full h-[500px] bg-white rounded-xl p-4 shadow-md">
           <Bar
-            data={chartData}
-            options={{
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: {
-                legend: { display: false },
-                datalabels: {
-                  anchor: "end",
-                  align: "top",
-                  color: "#000",
-                  font: { weight: "bold", size: 12 },
-                  formatter: (value: number) => value + "%",
-                },
-              },
-              scales: {
-                y: {
-                  beginAtZero: true,
-                  max: 100,
-                  ticks: {
-                    stepSize: 25,
-                  },
-                },
-              },
-            }}
-            plugins={[StageBackgroundPlugin]}
-          />
+  data={chartData}
+  options={{
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      datalabels: {
+        anchor: "center",      // center of bar
+        align: "center",
+        color: "#fff",
+        font: { weight: "bold", size: 14 },
+        formatter: (value: number, ctx: any) => {
+          // Show percentage in the middle
+          return value ;
+        },
+      },
+      tooltip: {
+        callbacks: {
+          label: (context) => {
+            const row = visibleData[context.dataIndex] || {};
+            const status = getWorkStatus(row);
+
+            if (status === "yes") {
+              return `Workers: ${row["WORKERS ON BUS"] || "N/A"}`;
+            } else {
+              return `Reason: ${row["REASONS"] || "Not Provided"}`;
+            }
+          },
+        },
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        max: 100,
+        ticks: {
+          stepSize: 25,
+        },
+      },
+    },
+  }}
+  plugins={[StageBackgroundPlugin, ChartDataLabels]}
+/>
+
         </div>
 
         {/* Pagination */}
